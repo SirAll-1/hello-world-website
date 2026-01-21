@@ -24,7 +24,7 @@
 
         .title {
             position: absolute;
-            top: 50%;
+            top: 40%;
             left: 50%;
             transform: translate(-50%, -50%);
             color: #fff;
@@ -37,6 +37,95 @@
             animation: pulse 2s ease-in-out infinite;
         }
 
+        .details-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, 0);
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .details-container.show {
+            opacity: 1;
+        }
+
+        .details-toggle {
+            background: rgba(255, 255, 0, 0.2);
+            border: 2px solid #ffff00;
+            color: #fff;
+            padding: 12px 24px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 8px;
+            text-shadow: 0 0 10px #ffff00;
+            box-shadow: 0 0 20px rgba(255, 255, 0, 0.3);
+            transition: all 0.3s;
+        }
+
+        .details-toggle:hover {
+            background: rgba(255, 255, 0, 0.3);
+            box-shadow: 0 0 30px rgba(255, 255, 0, 0.5);
+        }
+
+        .details-panel {
+            background: rgba(10, 10, 26, 0.9);
+            border: 2px solid #ffff00;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 10px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out;
+            box-shadow: 0 0 30px rgba(255, 255, 0, 0.3);
+        }
+
+        .details-panel.open {
+            max-height: 500px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-label {
+            color: #ffff00;
+            font-size: 16px;
+            margin-bottom: 8px;
+            display: block;
+            text-shadow: 0 0 5px #ffff00;
+        }
+
+        .control-slider {
+            width: 250px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .control-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #ffff00;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px #ffff00;
+        }
+
+        .control-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #ffff00;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px #ffff00;
+            border: none;
+        }
+
         @keyframes pulse {
             0%, 100% { opacity: 0.8; }
             50% { opacity: 1; }
@@ -45,7 +134,25 @@
 </head>
 <body>
     <canvas id="starfield"></canvas>
-    <div class="title">HYPERSPACE ⭐</div>
+    <div class="title">Stars are beautiful, aren't they ⭐</div>
+
+    <div class="details-container" id="detailsContainer">
+        <button class="details-toggle" id="detailsToggle">here are some details</button>
+        <div class="details-panel" id="detailsPanel">
+            <div class="control-group">
+                <label class="control-label">Star Size: <span id="sizeValue">1.5</span></label>
+                <input type="range" class="control-slider" id="sizeSlider" min="0.5" max="4" step="0.1" value="1.5">
+            </div>
+            <div class="control-group">
+                <label class="control-label">Blur Intensity: <span id="blurValue">15</span></label>
+                <input type="range" class="control-slider" id="blurSlider" min="0" max="40" step="1" value="15">
+            </div>
+            <div class="control-group">
+                <label class="control-label">Speed: <span id="speedValue">10</span></label>
+                <input type="range" class="control-slider" id="speedSlider" min="2" max="30" step="1" value="10">
+            </div>
+        </div>
+    </div>
 
     <script>
         const canvas = document.getElementById('starfield');
@@ -53,6 +160,46 @@
 
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+
+        // Control variables
+        let sizeMultiplier = 1.5;
+        let blurIntensity = 15;
+        let baseSpeed = 10;
+
+        // Show details container after 3 seconds
+        setTimeout(() => {
+            document.getElementById('detailsContainer').classList.add('show');
+        }, 3000);
+
+        // Toggle details panel
+        document.getElementById('detailsToggle').addEventListener('click', () => {
+            const panel = document.getElementById('detailsPanel');
+            panel.classList.toggle('open');
+        });
+
+        // Size slider
+        document.getElementById('sizeSlider').addEventListener('input', (e) => {
+            sizeMultiplier = parseFloat(e.target.value);
+            document.getElementById('sizeValue').textContent = sizeMultiplier.toFixed(1);
+        });
+
+        // Blur slider
+        document.getElementById('blurSlider').addEventListener('input', (e) => {
+            blurIntensity = parseInt(e.target.value);
+            document.getElementById('blurValue').textContent = blurIntensity;
+        });
+
+        // Speed slider
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            baseSpeed = parseInt(e.target.value);
+            document.getElementById('speedValue').textContent = baseSpeed;
+            // Update all star speeds
+            stars.forEach(star => {
+                const speedRatio = star.speed / star.originalSpeed;
+                star.originalSpeed = baseSpeed * (0.5 + Math.random() * 1);
+                star.speed = star.originalSpeed * speedRatio;
+            });
+        });
 
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
@@ -80,7 +227,8 @@
                 this.py = (Math.random() - 0.5) * 2000;
 
                 // Speed
-                this.speed = 8 + Math.random() * 8;
+                this.originalSpeed = baseSpeed * (0.5 + Math.random() * 1);
+                this.speed = this.originalSpeed;
 
                 // Star properties
                 this.baseSize = 1 + Math.random() * 2;
@@ -116,7 +264,7 @@
                 const scale = 1000 / this.z;
                 this.x = centerX + this.px * scale;
                 this.y = centerY + this.py * scale;
-                this.size = this.baseSize * scale * 2;
+                this.size = this.baseSize * scale * 2 * sizeMultiplier;
 
                 // Update rotation
                 this.rotation += this.rotationSpeed;
@@ -152,14 +300,14 @@
                 ctx.closePath();
 
                 // Glow effect
-                ctx.shadowBlur = 20;
+                ctx.shadowBlur = blurIntensity;
                 ctx.shadowColor = this.color;
                 ctx.fillStyle = this.color;
                 ctx.globalAlpha = alpha;
                 ctx.fill();
 
                 // Inner glow
-                ctx.shadowBlur = 10;
+                ctx.shadowBlur = blurIntensity * 0.5;
                 ctx.fillStyle = '#ffffff';
                 ctx.globalAlpha = alpha * 0.6;
                 ctx.fill();
@@ -174,7 +322,7 @@
                     ctx.globalAlpha = this.alpha * 0.5;
                     ctx.strokeStyle = this.color;
                     ctx.lineWidth = Math.max(1, this.size / 3);
-                    ctx.shadowBlur = 15;
+                    ctx.shadowBlur = blurIntensity;
                     ctx.shadowColor = this.color;
                     ctx.beginPath();
                     ctx.moveTo(this.prevX, this.prevY);
