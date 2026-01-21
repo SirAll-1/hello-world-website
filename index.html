@@ -88,6 +88,19 @@
             animation: fadeIn 1s forwards;
         }
 
+        .epic-gamer {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            opacity: 0;
+            color: #ff00ff;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+
+        .epic-gamer.show {
+            animation: fadeIn 0.5s forwards;
+        }
+
         .author {
             font-size: 20px;
             margin-top: 30px;
@@ -122,6 +135,7 @@
     </div>
 
     <div class="content" id="content">
+        <div class="epic-gamer" id="epicGamer">Epic Gamer Moment</div>
         <div class="hello-world" id="helloWorld"></div>
         <div class="greeting" id="greeting">
             Greetings inhabitants of planet Earth, let's embark on this vibe-coding adventure together
@@ -136,6 +150,7 @@
         const percentage = document.getElementById('percentage');
         const loadingContainer = document.querySelector('.loading-container');
         const content = document.getElementById('content');
+        const epicGamer = document.getElementById('epicGamer');
         const helloWorld = document.getElementById('helloWorld');
         const greeting = document.getElementById('greeting');
         const author = document.getElementById('author');
@@ -166,29 +181,34 @@
                     loadingContainer.classList.add('hidden');
                     content.style.display = 'block';
 
-                    // Type out "Hello World" letter by letter
-                    const text = 'Hello World';
-                    let index = 0;
+                    // Show "Epic Gamer Moment" immediately
+                    epicGamer.classList.add('show');
 
-                    const typeInterval = setInterval(() => {
-                        if (index < text.length) {
-                            const span = document.createElement('span');
-                            span.textContent = text[index];
-                            span.style.animationDelay = '0s';
-                            helloWorld.appendChild(span);
-                            index++;
-                        } else {
-                            clearInterval(typeInterval);
-                            // Show greeting after "Hello World" is complete
-                            setTimeout(() => {
-                                greeting.classList.add('show');
-                                // Show author name after greeting
+                    // Type out "Hello World" letter by letter after Epic Gamer Moment
+                    setTimeout(() => {
+                        const text = 'Hello World';
+                        let index = 0;
+
+                        const typeInterval = setInterval(() => {
+                            if (index < text.length) {
+                                const span = document.createElement('span');
+                                span.textContent = text[index];
+                                span.style.animationDelay = '0s';
+                                helloWorld.appendChild(span);
+                                index++;
+                            } else {
+                                clearInterval(typeInterval);
+                                // Show greeting after "Hello World" is complete
                                 setTimeout(() => {
-                                    author.classList.add('show');
-                                }, 1000);
-                            }, 500);
-                        }
-                    }, 150); // 150ms between each letter
+                                    greeting.classList.add('show');
+                                    // Show author name after greeting
+                                    setTimeout(() => {
+                                        author.classList.add('show');
+                                    }, 1000);
+                                }, 500);
+                            }
+                        }, 150); // 150ms between each letter
+                    }, 500);
                 }, 500);
             }, 200);
         }
