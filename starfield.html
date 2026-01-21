@@ -45,7 +45,7 @@
 </head>
 <body>
     <canvas id="starfield"></canvas>
-    <div class="title">SWIFT ⭐</div>
+    <div class="title">HYPERSPACE ⭐</div>
 
     <script>
         const canvas = document.getElementById('starfield');
@@ -62,30 +62,32 @@
         class Star {
             constructor() {
                 this.reset();
-                // Start at random positions for initial spread
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
             }
 
             reset() {
-                // Stars shoot from center
-                this.x = canvas.width / 2;
-                this.y = canvas.height / 2;
+                // Stars start from center (vanishing point)
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
 
-                // Random angle for Swift-like spread
+                // Random angle for direction
                 this.angle = Math.random() * Math.PI * 2;
-                this.speed = 2 + Math.random() * 4;
 
-                // Velocity components
-                this.vx = Math.cos(this.angle) * this.speed;
-                this.vy = Math.sin(this.angle) * this.speed;
+                // Z-depth (distance from screen)
+                this.z = Math.random() * 2000 + 100;
+
+                // Position on the "far" plane
+                this.px = (Math.random() - 0.5) * 2000;
+                this.py = (Math.random() - 0.5) * 2000;
+
+                // Speed
+                this.speed = 8 + Math.random() * 8;
 
                 // Star properties
-                this.size = 8 + Math.random() * 12;
+                this.baseSize = 1 + Math.random() * 2;
                 this.rotation = Math.random() * Math.PI * 2;
-                this.rotationSpeed = (Math.random() - 0.5) * 0.2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.15;
 
-                // Color variations (yellow/gold like Pokemon Swift)
+                // Color variations (yellow/gold/white)
                 const colorVariation = Math.random();
                 if (colorVariation < 0.6) {
                     this.color = '#ffff00'; // Yellow
@@ -95,32 +97,36 @@
                     this.color = '#ffffff'; // White
                 }
 
-                this.alpha = 1;
-                this.fadeSpeed = 0.005 + Math.random() * 0.01;
-                this.trail = [];
+                this.prevX = null;
+                this.prevY = null;
             }
 
             update() {
-                // Add current position to trail
-                this.trail.push({ x: this.x, y: this.y, alpha: this.alpha });
-                if (this.trail.length > 8) {
-                    this.trail.shift();
-                }
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
 
-                // Update position
-                this.x += this.vx;
-                this.y += this.vy;
+                // Save previous position for trail
+                this.prevX = this.x;
+                this.prevY = this.y;
+
+                // Move star towards screen (decrease z)
+                this.z -= this.speed;
+
+                // 3D to 2D projection
+                const scale = 1000 / this.z;
+                this.x = centerX + this.px * scale;
+                this.y = centerY + this.py * scale;
+                this.size = this.baseSize * scale * 2;
 
                 // Update rotation
                 this.rotation += this.rotationSpeed;
 
-                // Gradually fade out
-                this.alpha -= this.fadeSpeed;
+                // Calculate alpha based on distance (fade in as it gets closer)
+                this.alpha = Math.min(1, (2000 - this.z) / 500);
 
-                // Reset if star is off screen or fully faded
-                if (this.x < -50 || this.x > canvas.width + 50 ||
-                    this.y < -50 || this.y > canvas.height + 50 ||
-                    this.alpha <= 0) {
+                // Reset if star has passed the screen
+                if (this.z <= 0 || this.x < -100 || this.x > canvas.width + 100 ||
+                    this.y < -100 || this.y > canvas.height + 100) {
                     this.reset();
                 }
             }
@@ -162,36 +168,39 @@
             }
 
             draw() {
-                // Draw trail
-                this.trail.forEach((point, index) => {
-                    const trailAlpha = (index / this.trail.length) * this.alpha * 0.4;
-                    const trailSize = this.size * (index / this.trail.length) * 0.7;
-
-                    ctx.globalAlpha = trailAlpha;
-                    ctx.fillStyle = this.color;
-                    ctx.shadowBlur = 10;
+                // Draw motion trail (line from previous position)
+                if (this.prevX !== null && this.prevY !== null && this.size > 1) {
+                    ctx.save();
+                    ctx.globalAlpha = this.alpha * 0.5;
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = Math.max(1, this.size / 3);
+                    ctx.shadowBlur = 15;
                     ctx.shadowColor = this.color;
                     ctx.beginPath();
-                    ctx.arc(point.x, point.y, trailSize / 3, 0, Math.PI * 2);
-                    ctx.fill();
-                });
+                    ctx.moveTo(this.prevX, this.prevY);
+                    ctx.lineTo(this.x, this.y);
+                    ctx.stroke();
+                    ctx.restore();
+                }
 
                 // Draw main star
-                this.drawStar(
-                    this.x,
-                    this.y,
-                    5, // 5-pointed star
-                    this.size,
-                    this.size * 0.4,
-                    this.rotation,
-                    this.alpha
-                );
+                if (this.size > 0.5) {
+                    this.drawStar(
+                        this.x,
+                        this.y,
+                        5, // 5-pointed star
+                        this.size,
+                        this.size * 0.4,
+                        this.rotation,
+                        this.alpha
+                    );
+                }
             }
         }
 
         // Create stars
         const stars = [];
-        const starCount = 80;
+        const starCount = 150;
 
         for (let i = 0; i < starCount; i++) {
             stars.push(new Star());
@@ -199,8 +208,8 @@
 
         // Animation loop
         function animate() {
-            // Fade effect instead of clearing
-            ctx.fillStyle = 'rgba(10, 10, 26, 0.15)';
+            // Clear with fade effect for motion blur
+            ctx.fillStyle = 'rgba(10, 10, 26, 0.25)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // Update and draw stars
@@ -214,19 +223,18 @@
 
         animate();
 
-        // Add stars on click
-        canvas.addEventListener('click', (e) => {
-            for (let i = 0; i < 20; i++) {
-                const star = new Star();
-                star.x = e.clientX;
-                star.y = e.clientY;
-                stars.push(star);
-            }
+        // Speed boost on click
+        canvas.addEventListener('click', () => {
+            stars.forEach(star => {
+                star.speed *= 2;
+            });
 
-            // Remove excess stars
-            if (stars.length > 200) {
-                stars.splice(0, stars.length - 200);
-            }
+            // Reset speed after 500ms
+            setTimeout(() => {
+                stars.forEach(star => {
+                    star.speed /= 2;
+                });
+            }, 500);
         });
     </script>
 </body>
