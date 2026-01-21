@@ -1,4 +1,4 @@
-# Swift Starfield - Pokemon Inspired
+# Interactive Starfield - "Stars are beautiful, aren't they?"
 
 ```html
 <!DOCTYPE html>
@@ -27,7 +27,7 @@
 
         .title {
             position: absolute;
-            top: 50%;
+            top: 40%;
             left: 50%;
             transform: translate(-50%, -50%);
             color: #fff;
@@ -40,6 +40,95 @@
             animation: pulse 2s ease-in-out infinite;
         }
 
+        .details-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, 0);
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .details-container.show {
+            opacity: 1;
+        }
+
+        .details-toggle {
+            background: rgba(255, 255, 0, 0.2);
+            border: 2px solid #ffff00;
+            color: #fff;
+            padding: 12px 24px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 8px;
+            text-shadow: 0 0 10px #ffff00;
+            box-shadow: 0 0 20px rgba(255, 255, 0, 0.3);
+            transition: all 0.3s;
+        }
+
+        .details-toggle:hover {
+            background: rgba(255, 255, 0, 0.3);
+            box-shadow: 0 0 30px rgba(255, 255, 0, 0.5);
+        }
+
+        .details-panel {
+            background: rgba(10, 10, 26, 0.9);
+            border: 2px solid #ffff00;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 10px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out;
+            box-shadow: 0 0 30px rgba(255, 255, 0, 0.3);
+        }
+
+        .details-panel.open {
+            max-height: 500px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-label {
+            color: #ffff00;
+            font-size: 16px;
+            margin-bottom: 8px;
+            display: block;
+            text-shadow: 0 0 5px #ffff00;
+        }
+
+        .control-slider {
+            width: 250px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .control-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #ffff00;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px #ffff00;
+        }
+
+        .control-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #ffff00;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px #ffff00;
+            border: none;
+        }
+
         @keyframes pulse {
             0%, 100% { opacity: 0.8; }
             50% { opacity: 1; }
@@ -48,7 +137,29 @@
 </head>
 <body>
     <canvas id="starfield"></canvas>
-    <div class="title">SWIFT ⭐</div>
+    <div class="title">Stars are beautiful, aren't they? ⭐</div>
+
+    <div class="details-container" id="detailsContainer">
+        <button class="details-toggle" id="detailsToggle">here are some details</button>
+        <div class="details-panel" id="detailsPanel">
+            <div class="control-group">
+                <label class="control-label">Trail Length: <span id="trailValue">8</span></label>
+                <input type="range" class="control-slider" id="trailSlider" min="0" max="20" step="1" value="8">
+            </div>
+            <div class="control-group">
+                <label class="control-label">Star Count: <span id="countValue">150</span></label>
+                <input type="range" class="control-slider" id="countSlider" min="50" max="500" step="10" value="150">
+            </div>
+            <div class="control-group">
+                <label class="control-label">Star Speed: <span id="speedValue">10</span></label>
+                <input type="range" class="control-slider" id="speedSlider" min="2" max="30" step="1" value="10">
+            </div>
+            <div class="control-group">
+                <label class="control-label">Spawn Radius: <span id="radiusValue">2000</span></label>
+                <input type="range" class="control-slider" id="radiusSlider" min="500" max="4000" step="100" value="2000">
+            </div>
+        </div>
+    </div>
 
     <script>
         const canvas = document.getElementById('starfield');
@@ -56,6 +167,64 @@
 
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
+
+        // Control variables
+        let maxTrailLength = 8;
+        let targetStarCount = 150;
+        let baseSpeed = 10;
+        let spawnRadius = 2000;
+
+        // Show details container after 3 seconds
+        setTimeout(() => {
+            document.getElementById('detailsContainer').classList.add('show');
+        }, 3000);
+
+        // Toggle details panel
+        document.getElementById('detailsToggle').addEventListener('click', () => {
+            const panel = document.getElementById('detailsPanel');
+            panel.classList.toggle('open');
+        });
+
+        // Trail Length slider
+        document.getElementById('trailSlider').addEventListener('input', (e) => {
+            maxTrailLength = parseInt(e.target.value);
+            document.getElementById('trailValue').textContent = maxTrailLength;
+        });
+
+        // Star Count slider
+        document.getElementById('countSlider').addEventListener('input', (e) => {
+            targetStarCount = parseInt(e.target.value);
+            document.getElementById('countValue').textContent = targetStarCount;
+
+            // Adjust star count
+            if (stars.length < targetStarCount) {
+                // Add stars
+                while (stars.length < targetStarCount) {
+                    stars.push(new Star());
+                }
+            } else if (stars.length > targetStarCount) {
+                // Remove stars
+                stars.splice(targetStarCount);
+            }
+        });
+
+        // Speed slider
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            baseSpeed = parseInt(e.target.value);
+            document.getElementById('speedValue').textContent = baseSpeed;
+            // Update all star speeds
+            stars.forEach(star => {
+                const speedRatio = star.speed / star.originalSpeed;
+                star.originalSpeed = baseSpeed * (0.5 + Math.random() * 1);
+                star.speed = star.originalSpeed * speedRatio;
+            });
+        });
+
+        // Spawn Radius slider
+        document.getElementById('radiusSlider').addEventListener('input', (e) => {
+            spawnRadius = parseInt(e.target.value);
+            document.getElementById('radiusValue').textContent = spawnRadius;
+        });
 
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
@@ -65,30 +234,33 @@
         class Star {
             constructor() {
                 this.reset();
-                // Start at random positions for initial spread
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
             }
 
             reset() {
-                // Stars shoot from center
-                this.x = canvas.width / 2;
-                this.y = canvas.height / 2;
+                // Stars start from center (vanishing point)
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
 
-                // Random angle for Swift-like spread
+                // Random angle for direction
                 this.angle = Math.random() * Math.PI * 2;
-                this.speed = 2 + Math.random() * 4;
 
-                // Velocity components
-                this.vx = Math.cos(this.angle) * this.speed;
-                this.vy = Math.sin(this.angle) * this.speed;
+                // Z-depth (distance from screen)
+                this.z = Math.random() * 2000 + 100;
+
+                // Position on the "far" plane
+                this.px = (Math.random() - 0.5) * spawnRadius;
+                this.py = (Math.random() - 0.5) * spawnRadius;
+
+                // Speed
+                this.originalSpeed = baseSpeed * (0.5 + Math.random() * 1);
+                this.speed = this.originalSpeed;
 
                 // Star properties
-                this.size = 8 + Math.random() * 12;
+                this.baseSize = 1 + Math.random() * 2;
                 this.rotation = Math.random() * Math.PI * 2;
-                this.rotationSpeed = (Math.random() - 0.5) * 0.2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.15;
 
-                // Color variations (yellow/gold like Pokemon Swift)
+                // Color variations (yellow/gold/white)
                 const colorVariation = Math.random();
                 if (colorVariation < 0.6) {
                     this.color = '#ffff00'; // Yellow
@@ -98,32 +270,45 @@
                     this.color = '#ffffff'; // White
                 }
 
-                this.alpha = 1;
-                this.fadeSpeed = 0.005 + Math.random() * 0.01;
+                this.prevX = null;
+                this.prevY = null;
                 this.trail = [];
             }
 
             update() {
-                // Add current position to trail
-                this.trail.push({ x: this.x, y: this.y, alpha: this.alpha });
-                if (this.trail.length > 8) {
-                    this.trail.shift();
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+
+                // Save previous position for trail
+                this.prevX = this.x;
+                this.prevY = this.y;
+
+                // Add to trail
+                if (this.x !== undefined && this.y !== undefined) {
+                    this.trail.push({ x: this.x, y: this.y, alpha: this.alpha });
+                    if (this.trail.length > maxTrailLength) {
+                        this.trail.shift();
+                    }
                 }
 
-                // Update position
-                this.x += this.vx;
-                this.y += this.vy;
+                // Move star towards screen (decrease z)
+                this.z -= this.speed;
+
+                // 3D to 2D projection
+                const scale = 1000 / this.z;
+                this.x = centerX + this.px * scale;
+                this.y = centerY + this.py * scale;
+                this.size = this.baseSize * scale * 2;
 
                 // Update rotation
                 this.rotation += this.rotationSpeed;
 
-                // Gradually fade out
-                this.alpha -= this.fadeSpeed;
+                // Calculate alpha based on distance (fade in as it gets closer)
+                this.alpha = Math.min(1, (2000 - this.z) / 500);
 
-                // Reset if star is off screen or fully faded
-                if (this.x < -50 || this.x > canvas.width + 50 ||
-                    this.y < -50 || this.y > canvas.height + 50 ||
-                    this.alpha <= 0) {
+                // Reset if star has passed the screen
+                if (this.z <= 0 || this.x < -100 || this.x > canvas.width + 100 ||
+                    this.y < -100 || this.y > canvas.height + 100) {
                     this.reset();
                 }
             }
@@ -149,14 +334,14 @@
                 ctx.closePath();
 
                 // Glow effect
-                ctx.shadowBlur = 20;
+                ctx.shadowBlur = 15;
                 ctx.shadowColor = this.color;
                 ctx.fillStyle = this.color;
                 ctx.globalAlpha = alpha;
                 ctx.fill();
 
                 // Inner glow
-                ctx.shadowBlur = 10;
+                ctx.shadowBlur = 8;
                 ctx.fillStyle = '#ffffff';
                 ctx.globalAlpha = alpha * 0.6;
                 ctx.fill();
@@ -166,35 +351,44 @@
 
             draw() {
                 // Draw trail
-                this.trail.forEach((point, index) => {
-                    const trailAlpha = (index / this.trail.length) * this.alpha * 0.4;
-                    const trailSize = this.size * (index / this.trail.length) * 0.7;
+                if (maxTrailLength > 0 && this.trail.length > 1) {
+                    ctx.save();
+                    for (let i = 0; i < this.trail.length - 1; i++) {
+                        const point = this.trail[i];
+                        const nextPoint = this.trail[i + 1];
+                        const trailAlpha = (i / this.trail.length) * this.alpha * 0.5;
 
-                    ctx.globalAlpha = trailAlpha;
-                    ctx.fillStyle = this.color;
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = this.color;
-                    ctx.beginPath();
-                    ctx.arc(point.x, point.y, trailSize / 3, 0, Math.PI * 2);
-                    ctx.fill();
-                });
+                        ctx.globalAlpha = trailAlpha;
+                        ctx.strokeStyle = this.color;
+                        ctx.lineWidth = Math.max(1, (i / this.trail.length) * this.size / 2);
+                        ctx.shadowBlur = 10;
+                        ctx.shadowColor = this.color;
+                        ctx.beginPath();
+                        ctx.moveTo(point.x, point.y);
+                        ctx.lineTo(nextPoint.x, nextPoint.y);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+                }
 
                 // Draw main star
-                this.drawStar(
-                    this.x,
-                    this.y,
-                    5, // 5-pointed star
-                    this.size,
-                    this.size * 0.4,
-                    this.rotation,
-                    this.alpha
-                );
+                if (this.size > 0.5) {
+                    this.drawStar(
+                        this.x,
+                        this.y,
+                        5, // 5-pointed star
+                        this.size,
+                        this.size * 0.4,
+                        this.rotation,
+                        this.alpha
+                    );
+                }
             }
         }
 
         // Create stars
         const stars = [];
-        const starCount = 80;
+        const starCount = 150;
 
         for (let i = 0; i < starCount; i++) {
             stars.push(new Star());
@@ -202,8 +396,8 @@
 
         // Animation loop
         function animate() {
-            // Fade effect instead of clearing
-            ctx.fillStyle = 'rgba(10, 10, 26, 0.15)';
+            // Clear with fade effect for motion blur
+            ctx.fillStyle = 'rgba(10, 10, 26, 0.25)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // Update and draw stars
@@ -217,19 +411,18 @@
 
         animate();
 
-        // Add stars on click
-        canvas.addEventListener('click', (e) => {
-            for (let i = 0; i < 20; i++) {
-                const star = new Star();
-                star.x = e.clientX;
-                star.y = e.clientY;
-                stars.push(star);
-            }
+        // Speed boost on click
+        canvas.addEventListener('click', () => {
+            stars.forEach(star => {
+                star.speed *= 2;
+            });
 
-            // Remove excess stars
-            if (stars.length > 200) {
-                stars.splice(0, stars.length - 200);
-            }
+            // Reset speed after 500ms
+            setTimeout(() => {
+                stars.forEach(star => {
+                    star.speed /= 2;
+                });
+            }, 500);
         });
     </script>
 </body>
