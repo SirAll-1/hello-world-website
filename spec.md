@@ -91,6 +91,17 @@
             animation: fadeIn 1s forwards;
         }
 
+        .author {
+            font-size: 20px;
+            margin-top: 30px;
+            opacity: 0;
+            color: #00cc00;
+        }
+
+        .author.show {
+            animation: fadeIn 1s forwards;
+        }
+
         .blink {
             animation: blinkEffect 0.5s;
         }
@@ -118,6 +129,9 @@
         <div class="greeting" id="greeting">
             Greetings inhabitants of planet Earth, let's embark on this vibe-coding adventure together
         </div>
+        <div class="author" id="author">
+            - Saral Sapkota
+        </div>
     </div>
 
     <script>
@@ -127,6 +141,7 @@
         const content = document.getElementById('content');
         const helloWorld = document.getElementById('helloWorld');
         const greeting = document.getElementById('greeting');
+        const author = document.getElementById('author');
 
         let progress = 0;
         const duration = 15000; // 15 seconds
@@ -170,6 +185,10 @@
                             // Show greeting after "Hello World" is complete
                             setTimeout(() => {
                                 greeting.classList.add('show');
+                                // Show author name after greeting
+                                setTimeout(() => {
+                                    author.classList.add('show');
+                                }, 1000);
                             }, 500);
                         }
                     }, 150); // 150ms between each letter
