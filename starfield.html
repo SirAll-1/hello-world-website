@@ -140,16 +140,20 @@
         <button class="details-toggle" id="detailsToggle">here are some details</button>
         <div class="details-panel" id="detailsPanel">
             <div class="control-group">
-                <label class="control-label">Star Size: <span id="sizeValue">1.5</span></label>
-                <input type="range" class="control-slider" id="sizeSlider" min="0.5" max="4" step="0.1" value="1.5">
+                <label class="control-label">Trail Length: <span id="trailValue">8</span></label>
+                <input type="range" class="control-slider" id="trailSlider" min="0" max="20" step="1" value="8">
             </div>
             <div class="control-group">
-                <label class="control-label">Blur Intensity: <span id="blurValue">15</span></label>
-                <input type="range" class="control-slider" id="blurSlider" min="0" max="40" step="1" value="15">
+                <label class="control-label">Star Count: <span id="countValue">150</span></label>
+                <input type="range" class="control-slider" id="countSlider" min="50" max="500" step="10" value="150">
             </div>
             <div class="control-group">
-                <label class="control-label">Speed: <span id="speedValue">10</span></label>
+                <label class="control-label">Star Speed: <span id="speedValue">10</span></label>
                 <input type="range" class="control-slider" id="speedSlider" min="2" max="30" step="1" value="10">
+            </div>
+            <div class="control-group">
+                <label class="control-label">Spawn Radius: <span id="radiusValue">2000</span></label>
+                <input type="range" class="control-slider" id="radiusSlider" min="500" max="4000" step="100" value="2000">
             </div>
         </div>
     </div>
@@ -162,9 +166,10 @@
         canvas.height = window.innerHeight;
 
         // Control variables
-        let sizeMultiplier = 1.5;
-        let blurIntensity = 15;
+        let maxTrailLength = 8;
+        let targetStarCount = 150;
         let baseSpeed = 10;
+        let spawnRadius = 2000;
 
         // Show details container after 3 seconds
         setTimeout(() => {
@@ -177,16 +182,27 @@
             panel.classList.toggle('open');
         });
 
-        // Size slider
-        document.getElementById('sizeSlider').addEventListener('input', (e) => {
-            sizeMultiplier = parseFloat(e.target.value);
-            document.getElementById('sizeValue').textContent = sizeMultiplier.toFixed(1);
+        // Trail Length slider
+        document.getElementById('trailSlider').addEventListener('input', (e) => {
+            maxTrailLength = parseInt(e.target.value);
+            document.getElementById('trailValue').textContent = maxTrailLength;
         });
 
-        // Blur slider
-        document.getElementById('blurSlider').addEventListener('input', (e) => {
-            blurIntensity = parseInt(e.target.value);
-            document.getElementById('blurValue').textContent = blurIntensity;
+        // Star Count slider
+        document.getElementById('countSlider').addEventListener('input', (e) => {
+            targetStarCount = parseInt(e.target.value);
+            document.getElementById('countValue').textContent = targetStarCount;
+
+            // Adjust star count
+            if (stars.length < targetStarCount) {
+                // Add stars
+                while (stars.length < targetStarCount) {
+                    stars.push(new Star());
+                }
+            } else if (stars.length > targetStarCount) {
+                // Remove stars
+                stars.splice(targetStarCount);
+            }
         });
 
         // Speed slider
@@ -199,6 +215,12 @@
                 star.originalSpeed = baseSpeed * (0.5 + Math.random() * 1);
                 star.speed = star.originalSpeed * speedRatio;
             });
+        });
+
+        // Spawn Radius slider
+        document.getElementById('radiusSlider').addEventListener('input', (e) => {
+            spawnRadius = parseInt(e.target.value);
+            document.getElementById('radiusValue').textContent = spawnRadius;
         });
 
         window.addEventListener('resize', () => {
@@ -223,8 +245,8 @@
                 this.z = Math.random() * 2000 + 100;
 
                 // Position on the "far" plane
-                this.px = (Math.random() - 0.5) * 2000;
-                this.py = (Math.random() - 0.5) * 2000;
+                this.px = (Math.random() - 0.5) * spawnRadius;
+                this.py = (Math.random() - 0.5) * spawnRadius;
 
                 // Speed
                 this.originalSpeed = baseSpeed * (0.5 + Math.random() * 1);
@@ -247,6 +269,7 @@
 
                 this.prevX = null;
                 this.prevY = null;
+                this.trail = [];
             }
 
             update() {
@@ -257,6 +280,14 @@
                 this.prevX = this.x;
                 this.prevY = this.y;
 
+                // Add to trail
+                if (this.x !== undefined && this.y !== undefined) {
+                    this.trail.push({ x: this.x, y: this.y, alpha: this.alpha });
+                    if (this.trail.length > maxTrailLength) {
+                        this.trail.shift();
+                    }
+                }
+
                 // Move star towards screen (decrease z)
                 this.z -= this.speed;
 
@@ -264,7 +295,7 @@
                 const scale = 1000 / this.z;
                 this.x = centerX + this.px * scale;
                 this.y = centerY + this.py * scale;
-                this.size = this.baseSize * scale * 2 * sizeMultiplier;
+                this.size = this.baseSize * scale * 2;
 
                 // Update rotation
                 this.rotation += this.rotationSpeed;
@@ -300,14 +331,14 @@
                 ctx.closePath();
 
                 // Glow effect
-                ctx.shadowBlur = blurIntensity;
+                ctx.shadowBlur = 15;
                 ctx.shadowColor = this.color;
                 ctx.fillStyle = this.color;
                 ctx.globalAlpha = alpha;
                 ctx.fill();
 
                 // Inner glow
-                ctx.shadowBlur = blurIntensity * 0.5;
+                ctx.shadowBlur = 8;
                 ctx.fillStyle = '#ffffff';
                 ctx.globalAlpha = alpha * 0.6;
                 ctx.fill();
@@ -316,18 +347,24 @@
             }
 
             draw() {
-                // Draw motion trail (line from previous position)
-                if (this.prevX !== null && this.prevY !== null && this.size > 1) {
+                // Draw trail
+                if (maxTrailLength > 0 && this.trail.length > 1) {
                     ctx.save();
-                    ctx.globalAlpha = this.alpha * 0.5;
-                    ctx.strokeStyle = this.color;
-                    ctx.lineWidth = Math.max(1, this.size / 3);
-                    ctx.shadowBlur = blurIntensity;
-                    ctx.shadowColor = this.color;
-                    ctx.beginPath();
-                    ctx.moveTo(this.prevX, this.prevY);
-                    ctx.lineTo(this.x, this.y);
-                    ctx.stroke();
+                    for (let i = 0; i < this.trail.length - 1; i++) {
+                        const point = this.trail[i];
+                        const nextPoint = this.trail[i + 1];
+                        const trailAlpha = (i / this.trail.length) * this.alpha * 0.5;
+
+                        ctx.globalAlpha = trailAlpha;
+                        ctx.strokeStyle = this.color;
+                        ctx.lineWidth = Math.max(1, (i / this.trail.length) * this.size / 2);
+                        ctx.shadowBlur = 10;
+                        ctx.shadowColor = this.color;
+                        ctx.beginPath();
+                        ctx.moveTo(point.x, point.y);
+                        ctx.lineTo(nextPoint.x, nextPoint.y);
+                        ctx.stroke();
+                    }
                     ctx.restore();
                 }
 
